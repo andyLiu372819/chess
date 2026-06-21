@@ -8,6 +8,7 @@ HEIGHT = 900
 BOARD_SIZE = 8
 SQUARE_SIZE = WIDTH // BOARD_SIZE
 ASSET_DIR = Path(__file__).resolve().parent / "assets"
+STARTING_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 PIECE_SPRITES = {
     "K": "white_king.png",
@@ -26,11 +27,42 @@ PIECE_SPRITES = {
 
 
 class Board:
-    def __init__(self, state="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"):
-        self.state = state
+    def __init__(self, state=STARTING_POSITION):
         self.font = pygame.font.SysFont("Arial", 50)
+        self.squares = self.parse_state(state)
         self.board_sprite = self.load_board_sprite()
         self.piece_sprites = self.load_piece_sprites()
+        self.selected_square = None
+
+    def parse_state(self, state):
+        """Convert a FEN placement string into an 8x8 grid.
+
+        The renderer wants direct row/column access, and the future move logic
+        will too. Keeping this conversion here means the rest of the class never
+        has to count through the compact FEN string while drawing or moving.
+        """
+        rows = state.split("/")
+        if len(rows) != BOARD_SIZE:
+            raise ValueError("Board state must contain exactly 8 rows.")
+
+        squares = []
+        for row_text in rows:
+            row = []
+            for symbol in row_text:
+                if symbol in "12345678":
+                    row.extend([None] * int(symbol))
+                elif symbol in PIECE_SPRITES:
+                    row.append(symbol)
+                else:
+                    raise ValueError(f"Invalid board symbol: {symbol!r}")
+
+            if len(row) != BOARD_SIZE:
+                raise ValueError(
+                    f"Each board row must contain exactly 8 squares: {row_text!r}"
+                )
+            squares.append(row)
+
+        return squares
 
     def load_board_sprite(self):
         board_path = ASSET_DIR / "board.png"
@@ -82,15 +114,41 @@ class Board:
             screen.blit(self.board_sprite, (0, 0))
         else:
             self.draw_fallback_board(screen)
+        
+        self.draw_selected_square(screen)
 
-        row = 0
-        col = 0
-        for symbol in self.state:
-            if symbol == "/":
-                row += 1
-                col = 0
-            elif symbol.isnumeric():
-                col += int(symbol)
-            elif symbol.isalpha():
-                self.draw_piece(screen, symbol, row, col)
-                col += 1
+        for row_index, row in enumerate(self.squares):
+            for col_index, piece in enumerate(row):
+                if piece:
+                    self.draw_piece(screen, piece, row_index, col_index)
+
+    def get_square_from_mouse(self, position):
+        x, y = position
+        return y // SQUARE_SIZE, x // SQUARE_SIZE
+
+    def is_on_board(self, row, col):
+        return 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE
+
+    def piece_at(self, row, col):
+        if not self.is_on_board(row, col):
+            return None
+        return self.squares[row][col]
+    
+    def select_square(self, row, col):
+        if self.piece_at(row, col):
+            self.selected_square = (row, col)
+        else:
+            self.selected_square = None
+    
+    def draw_selected_square(self, screen):
+        if not self.selected_square:
+            return
+
+        row, col = self.selected_square
+        rect = pygame.Rect(
+            col * SQUARE_SIZE,
+            row * SQUARE_SIZE,
+            SQUARE_SIZE,
+            SQUARE_SIZE,
+        )
+        pygame.draw.rect(screen, (255, 220, 90), rect, 5)
