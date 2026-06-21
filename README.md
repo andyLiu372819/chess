@@ -7,14 +7,14 @@ A pygame-based chess project. The current version renders a chess board from a c
 - 8x8 chess board rendered with pygame
 - Starting chess position represented in FEN-like notation
 - Board drawing handled by a dedicated `Board` class
-- Piece image assets included under `img/pieces/`
+- Board and piece sprites included under `assets/`
 
 ## Project Structure
 
 ```text
-main.py       Starts the pygame window and game loop
-board.py      Stores board dimensions and draws the board state
-img/pieces/   Chess piece image assets
+main.py        Starts the pygame window and game loop
+board.py       Stores board dimensions and draws the board state
+assets/        Board and chess piece sprites
 ```
 
 ## Run The Game
@@ -36,7 +36,6 @@ python main.py
 The next steps for the chess game are:
 
 - Convert the board state into a stronger internal data model
-- Draw actual piece sprites instead of text labels
 - Add piece selection and movement
 - Validate legal moves
 - Add turn tracking
