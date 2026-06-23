@@ -13,7 +13,7 @@ def handle_events(board):
             return False
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             row, col = board.get_square_from_mouse(event.pos)
-            board.select_square(row, col)
+            board.handle_square_click(row, col)
     return True
 
 

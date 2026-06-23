@@ -33,6 +33,7 @@ class Board:
         self.board_sprite = self.load_board_sprite()
         self.piece_sprites = self.load_piece_sprites()
         self.selected_square = None
+        self.current_turn = "white"
 
     def parse_state(self, state):
         """Convert a FEN placement string into an 8x8 grid.
@@ -152,3 +153,44 @@ class Board:
             SQUARE_SIZE,
         )
         pygame.draw.rect(screen, (255, 220, 90), rect, 5)
+    
+    def handle_square_click(self, row, col):
+        if not self.is_on_board(row, col):
+            return
+        
+        if self.selected_square is None:
+            if self.piece_at(row, col):
+                if self.is_current_turn_piece(self.piece_at(row, col)):
+                    self.selected_square = (row, col)
+            return
+        
+        if self.piece_at(row, col):
+            if self.is_current_turn_piece(self.piece_at(row, col)):
+                    self.selected_square = (row, col)
+            return
+
+        self.move_piece(self.selected_square, (row, col))
+        self.selected_square = None
+
+    def move_piece(self, start, end):
+        start_row, start_col = start
+        end_row, end_col = end
+
+        piece = self.squares[start_row][start_col]
+        self.squares[end_row][end_col] = piece
+        self.squares[start_row][start_col] = None
+
+        self.switch_turn()
+
+    def piece_colour(self, piece):
+        if piece is None:
+            return
+        return "white" if piece.isupper() else "black"
+    
+    def is_current_turn_piece(self, piece):
+        return self.piece_colour(piece) == self.current_turn
+    
+    def switch_turn(self):
+        self.current_turn = "black" if self.current_turn == "white" else "white"
+    
+
