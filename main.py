@@ -1,6 +1,8 @@
 import pygame
 
-from board import Board, HEIGHT, WIDTH
+from board import Board
+from board_constants import HEIGHT, WIDTH
+from renderer import BoardRenderer
 
 
 FPS = 60
@@ -17,8 +19,8 @@ def handle_events(board):
     return True
 
 
-def draw_frame(screen, board):
-    board.draw(screen)
+def draw_frame(screen, board, renderer):
+    renderer.draw(screen, board)
     pygame.display.flip()
 
 
@@ -29,13 +31,14 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     clock = pygame.time.Clock()
     board = Board()
+    renderer = BoardRenderer()
     running = True
 
     try:
         while running:
             clock.tick(FPS)
             running = handle_events(board)
-            draw_frame(screen, board)
+            draw_frame(screen, board, renderer)
     finally:
         pygame.quit()
 
