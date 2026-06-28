@@ -12,6 +12,7 @@ class Board:
         self.selected_square = None
         self.current_turn = "white"
         self.legal_moves = []
+        self.last_move = None
         self.move_generator = MoveGenerator(self)
 
     def parse_state(self, state):
@@ -73,16 +74,13 @@ class Board:
                 self.select_square(row, col)
             return
 
-        if clicked_piece:
-            if self.is_current_turn_piece(clicked_piece):
-                self.select_square(row, col)
-            else:
-                self.clear_selection()
-            return
-
         if (row, col) in self.legal_moves:
             self.move_piece(self.selected_square, (row, col))
             self.clear_selection()
+            return
+
+        if clicked_piece and self.is_current_turn_piece(clicked_piece):
+            self.select_square(row, col)
             return
 
         self.clear_selection()
@@ -92,8 +90,31 @@ class Board:
         end_row, end_col = end
 
         piece = self.squares[start_row][start_col]
+        captured_piece = self.squares[end_row][end_col]
+
+        # An en passant capture lands diagonally on an empty square.
+        if (
+            piece.lower() == "p"
+            and start_col != end_col
+            and captured_piece is None
+        ):
+            captured_piece = self.squares[start_row][end_col]
+            self.squares[start_row][end_col] = None
+
         self.squares[end_row][end_col] = piece
         self.squares[start_row][start_col] = None
+
+        if piece == "P" and end_row == 0:
+            self.squares[end_row][end_col] = "Q"
+        elif piece == "p" and end_row == BOARD_SIZE - 1:
+            self.squares[end_row][end_col] = "q"
+
+        self.last_move = {
+            "start": start,
+            "end": end,
+            "piece": piece,
+            "captured_piece": captured_piece,
+        }
         self.switch_turn()
 
     def piece_colour(self, piece):

@@ -48,8 +48,8 @@ class BoardRenderer:
     def draw(self, screen, board):
         self.draw_board(screen)
         self.draw_selected_square(screen, board)
-        self.draw_legal_moves(screen, board)
         self.draw_pieces(screen, board)
+        self.draw_legal_moves(screen, board)
 
     def draw_board(self, screen):
         if self.board_sprite:
@@ -88,7 +88,11 @@ class BoardRenderer:
                 col * SQUARE_SIZE + SQUARE_SIZE // 2,
                 row * SQUARE_SIZE + SQUARE_SIZE // 2,
             )
-            pygame.draw.circle(screen, (80, 180, 100), center, 12)
+            if board.piece_at(row, col):
+                radius = SQUARE_SIZE // 2 - 8
+                pygame.draw.circle(screen, (200, 70, 70), center, radius, 5)
+            else:
+                pygame.draw.circle(screen, (80, 180, 100), center, 12)
 
     def draw_pieces(self, screen, board):
         for row_index, row in enumerate(board.squares):
