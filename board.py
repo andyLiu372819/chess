@@ -13,6 +13,8 @@ class Board:
         self.current_turn = "white"
         self.legal_moves = []
         self.last_move = None
+        self.game_status = "playing"
+        self.winner = None
         self.move_generator = MoveGenerator(self)
 
     def parse_state(self, state):
@@ -55,7 +57,7 @@ class Board:
     def select_square(self, row, col):
         if self.piece_at(row, col):
             self.selected_square = (row, col)
-            self.legal_moves = self.move_generator.get_pseudo_legal_moves(row, col)
+            self.legal_moves = self.move_generator.get_legal_move(row, col)
         else:
             self.clear_selection()
 
@@ -64,6 +66,9 @@ class Board:
         self.legal_moves = []
 
     def handle_square_click(self, row, col):
+        if self.game_status in ("checkmate", "stalemate"):
+            return
+
         if not self.is_on_board(row, col):
             return
 
@@ -85,7 +90,7 @@ class Board:
 
         self.clear_selection()
 
-    def move_piece(self, start, end):
+    def move_piece(self, start, end, evaluate_status=True):
         start_row, start_col = start
         end_row, end_col = end
 
@@ -117,6 +122,15 @@ class Board:
         }
         self.switch_turn()
 
+        if evaluate_status:
+            self.game_status = self.get_game_status()
+            if self.game_status == "checkmate":
+                self.winner = (
+                    "black" if self.current_turn == "white" else "white"
+                )
+            elif self.game_status == "stalemate":
+                self.winner = None
+
     def piece_colour(self, piece):
         if piece is None:
             return None
@@ -127,3 +141,58 @@ class Board:
 
     def switch_turn(self):
         self.current_turn = "black" if self.current_turn == "white" else "white"
+
+    def find_king(self, side):
+        king = "K" if side == "white" else "k"
+
+        return next(
+            ((i, j) for i in range(8) for j in range(8)
+             if self.piece_at(i, j) == king),
+             None
+        )
+
+    def is_in_check(self, colour):
+        attacker = "white" if colour == "black" else "black"
+        attacked_squares = self.move_generator.get_attacked_squares(attacker)
+        king_pos = self.find_king(colour)
+
+        return king_pos in attacked_squares
+
+    def would_leave_king_in_check(self, start, end):
+        colour = self.piece_colour(self.piece_at(*start))
+        save_square = [row[:] for row in self.squares]
+        save_turn = self.current_turn
+        save_move = self.last_move
+
+        try:
+            self.move_piece(start, end, evaluate_status=False)
+            return self.is_in_check(colour)
+        finally:
+            self.squares = save_square
+            self.current_turn = save_turn
+            self.last_move = save_move
+
+    def get_game_status(self):
+        colour = self.current_turn
+        has_move = self.has_legal_moves(colour)
+
+        if self.is_in_check(colour):
+            if has_move:
+                return "check"
+            else:
+                return "checkmate"
+
+        return "playing" if has_move else "stalemate"
+
+    def has_legal_moves(self, colour):
+        for i in range(8):
+            for j in range(8):
+                piece = self.piece_at(i, j)
+
+                if (
+                    self.piece_colour(piece) == colour
+                    and self.move_generator.get_legal_move(i, j)
+                ):
+                    return True
+
+        return False

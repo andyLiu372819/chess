@@ -2,6 +2,16 @@ class MoveGenerator:
     def __init__(self, board):
         self.board = board
 
+    def get_legal_move(self, row, col):
+        legal_moves = []
+        psuedo_moves = self.get_pseudo_legal_moves(row, col)
+
+        for move in psuedo_moves:
+            if not self.board.would_leave_king_in_check((row, col), move):
+                legal_moves.append(move)
+
+        return legal_moves
+
     def get_pseudo_legal_moves(self, row, col):
         piece = self.board.piece_at(row, col)
         if piece is None:
@@ -165,3 +175,30 @@ class MoveGenerator:
             and end_col == target_col
             and abs(end_col - col) == 1
         )
+
+    def get_attacked_squares(self, attacker):
+        target = set()
+
+        for i in range(8):
+            for j in range(8):
+                piece = self.board.piece_at(i, j)
+
+                if self.board.piece_colour(piece) == attacker:
+                    if piece.lower() == "p":
+                        target.update(self.get_pawn_target(i, j, attacker))
+                    else:
+                        target.update(self.get_pseudo_legal_moves(i, j))
+        return target
+
+    def get_pawn_target(self, row, col, attacker):
+        doa = 1 if attacker == "black" else -1
+        target = []
+
+        for i in [-1, 1]:
+            temp_row = row + doa
+            temp_col = col + i
+
+            if self.board.is_on_board(temp_row, temp_col):
+                target.append((temp_row, temp_col))
+
+        return target

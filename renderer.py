@@ -22,6 +22,7 @@ PIECE_SPRITES = {
 class BoardRenderer:
     def __init__(self):
         self.font = pygame.font.SysFont("Arial", 50)
+        self.status_font = pygame.font.SysFont("Arial", 42, bold=True)
         self.board_sprite = self.load_board_sprite()
         self.piece_sprites = self.load_piece_sprites()
 
@@ -50,6 +51,7 @@ class BoardRenderer:
         self.draw_selected_square(screen, board)
         self.draw_pieces(screen, board)
         self.draw_legal_moves(screen, board)
+        self.draw_game_result(screen, board)
 
     def draw_board(self, screen):
         if self.board_sprite:
@@ -112,3 +114,23 @@ class BoardRenderer:
         text = self.font.render(symbol, True, (20, 20, 20))
         rect = text.get_rect(center=(x + SQUARE_SIZE / 2, y + SQUARE_SIZE / 2))
         screen.blit(text, rect)
+
+    def draw_game_result(self, screen, board):
+        if board.game_status == "checkmate":
+            message = f"{board.winner.title()} wins by checkmate"
+        elif board.game_status == "stalemate":
+            message = "Draw by stalemate"
+        else:
+            return
+
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 145))
+        screen.blit(overlay, (0, 0))
+
+        text = self.status_font.render(message, True, (255, 255, 255))
+        text_rect = text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+        padding = 24
+        background = text_rect.inflate(padding * 2, padding * 2)
+        pygame.draw.rect(screen, (30, 30, 30), background, border_radius=6)
+        pygame.draw.rect(screen, (230, 230, 230), background, 2, border_radius=6)
+        screen.blit(text, text_rect)
